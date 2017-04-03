@@ -1,0 +1,272 @@
+---
+title: "League of Legends Data Exploration: Kills, Deaths, and Assists"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(DBI)
+library(RSQLite)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+con<- dbConnect(RSQLite::SQLite(), dbname='lolNA_Spring17.db')
+players_Spring17<- dbGetQuery( con,'select * from Players' )
+players_Spring17<- mutate(players_Spring17, fantasy=
+                          (kills*3)+(assists*2)+(deaths*-1)+(.01*totalMinionsKilled),
+                        goldEarnedpMin= goldEarned/duration,
+                        TDDCpMin= totalDamageDealtToChampions/duration,
+                        TDDEpMin= (totalDamageDealt-totalDamageDealtToChampions)/duration,
+                        TDTpMin= totalDamageTaken/duration,
+                        damageDealt_Efficiency_total= totalDamageDealt/goldSpent,
+                        damageDealt_Efficiency_champion= totalDamageDealtToChampions/goldSpent,
+                        damageTaken_Efficiency= totalDamageTaken/goldSpent,
+                        TDDCpKill= totalDamageDealtToChampions/kills,
+                        TDDCpDeath= totalDamageDealtToChampions/deaths,
+                        TDTpDeath= totalDamageTaken/deaths)
+
+player_avgs_Spring17<- players_Spring17 %>%
+  group_by(name, role) %>%
+  summarize(Player_mean_goldDif= mean(goldEarnedDif),
+            Player_mean_kills= mean(kills),
+            Player_mean_assists= mean(assists),
+            Player_mean_win= mean(win),
+            Player_mean_largestKillingSpree= mean(largestKillingSpree),
+            Player_mean_champLevelDif= mean(champLevelDif),
+            Player_mean_deaths= mean(deaths),
+            Player_mean_fantasy= mean(fantasy),
+            Player_mean_duration= mean(duration),
+            Player_mean_TDDC= mean(totalDamageDealtToChampions),
+            Player_mean_goldEarnedpMin= mean(goldEarnedpMin),
+            Player_mean_TDDCpMin= mean(TDDCpMin),
+            Player_mean_TDDEpMin=mean(TDDEpMin),
+            Player_mean_damageTaken_Efficiency= mean(damageTaken_Efficiency))
+
+team_avgs_Spring17<- players_Spring17 %>%
+  group_by(teamId) %>%
+  summarize(team_mean_goldDif= mean(goldEarnedDif)*5,
+            team_mean_kills= mean(kills)*5,
+            team_mean_assists= mean(assists)*5,
+            team_mean_win= mean(win),
+            team_mean_largestKillingSpree= mean(largestKillingSpree),
+            team_mean_champLevelDif= mean(champLevelDif)*5,
+            team_mean_deaths= mean(deaths)*5,
+            team_mean_fantasy= mean(fantasy)*5,
+            team_mean_duration= mean(duration),
+            team_mean_TDDC= mean(totalDamageDealtToChampions)*5,
+            team_mean_goldEarnedpMin= mean(goldEarnedpMin)*5,
+            team_mean_TDDCpMin= mean(TDDCpMin)*5,
+            team_mean_TDDEpMin=mean(TDDEpMin)*5)
+
+team_sums_Spring17<- players_Spring17 %>%
+  group_by(teamId) %>%
+  summarize(team_sum_goldDif= sum(goldEarnedDif),
+            team_sum_kills= sum(kills),
+            team_sum_assists= sum(assists),
+            team_sum_win= sum(win)/5,
+            team_sum_largestKillingSpree= sum(largestKillingSpree),
+            team_sum_champLevelDif= sum(champLevelDif),
+            team_sum_deaths= sum(deaths),
+            team_sum_fantasy= sum(fantasy),
+            team_sum_duration= sum(duration),
+            team_sum_TDDC= sum(totalDamageDealtToChampions),
+            team_sum_goldEarnedpMin= sum(goldEarnedpMin),
+            team_sum_TDDCpMin= sum(TDDCpMin),
+            team_sum_TDDEpMin=sum(TDDEpMin),
+            gamecount=n()/5)
+
+role_avgs_Spring17<- players_Spring17 %>%
+  group_by(role) %>%
+  summarize(role_mean_goldDif= mean(goldEarnedDif),
+            role_mean_kills= mean(kills),
+            role_mean_assists= mean(assists),
+            role_mean_win= mean(win),
+            role_mean_largestKillingSpree= mean(largestKillingSpree),
+            role_mean_champLevelDif= mean(champLevelDif),
+            role_mean_deaths= mean(deaths),
+            role_mean_fantasy= mean(fantasy),
+            role_mean_duration= mean(duration),
+            role_mean_TDDC= mean(totalDamageDealtToChampions),
+            role_mean_goldEarnedpMin= mean(goldEarnedpMin),
+            role_mean_TDDCpMin= mean(TDDCpMin),
+            role_mean_TDDEpMin=mean(TDDEpMin),
+            role_mean_damageTaken_Efficiency= mean(damageTaken_Efficiency))
+
+```
+
+## R Markdown
+
+Hi Everybody! My name is Selwyn and I'm just here to a fun little exploration data I can pull about the NA LCS Spring Split! I thought it'd be best to share this since the solit just ended and we have a whole week without League. I have a creeping fear that if I explore all the data I'd like to it'll be too long and boring so I figure it'd be best to do this in parts. For the first one I'll take a look at some general stats that might be interesting to the fans. If there seems to be some interest in this kind of work I'd love doing a deeper dive into each role, teams, and even particualr players. Let's get started!
+
+First up let's look at everybody's favorite stat, kills. Over the course of the Spring Split there were 6,099 kills with a total of 6,111 deaths. (Let's have a moment of silence for the 11 executions for the greater good and doublelift's death to Brambleback.) 3964 of those kills were by winning teams and 2135 by teams that eventually lost the game. That gives an average of 27.59729 kills per game, 17.93665 by winning teams and losing teams averaging 9.660633. Total assists came up to 13,709. That's an average of 2.247746 assists for every kill, which is going to be an interesting stat to look at for a comparison of team dynamics. We may find that certain teams trend to have a higher assist per kill, more assists per kills being indicative of a more frequent use of multiple players to create kills as opposed to solo stardom.
+
+And how could I forget about the 429,847 minions that died for our gold.
+
+Let's take a look how kills were split between each team in the LCS.
+
+```{r cars ,echo= FALSE}
+
+ggplot(team_sums_Spring17, aes(teamId, team_sum_kills), color=teamId) + 
+  geom_bar(stat = "identity",aes(fill= teamId)) + geom_text(aes(label=team_sum_kills))
+```
+
+
+We've got TSM and C9 at the top of our kill count and NV and DIG rounding oout the bottom. There is something particular to notice about the kills here. This measurement only shows us the total amount of kills that each team has racked up, but unfortunately each team doesn't play an equal amount of games. Let's look at a kill per game for each team. (I understand that these number by themselves might be a bit meaningless to you so next to each stat I'm going to add the number of standard deviations each is from the mean. This should give you a good idea of just how each team performs in a  particular area when compared to the mean.)
+
+
+```{r Team Kills Per Game, echo= FALSE}
+
+ggplot(team_sums_Spring17, aes(x=teamId, y=team_sum_kills/gamecount)) + 
+  geom_bar(stat = "identity",aes(fill= teamId))
+```
+
+#### And here we have our average kill count per game from highest to lowest.
+
+1) C9        15.36364 ---  (1.57793839)
+
+2) TSM       14.89362 --- (1.10164662)
+
+3) CLG       14.45455 ---  (0.65671563)
+
+4) P1        14.21951 ---  (0.41854584)
+
+5) FLY       14.02326 ---  (0.21967041)
+
+6) IMT       13.75000 ---  (-0.05723201)
+
+7) FOX       13.46512 ---  (-0.34591752)
+
+8) NV        12.46667 ---  (-0.77117965)
+
+9) DIG       13.04545 ---  (-1.35769148)
+
+10) TL       12.38298 ---  (-1.44249624)
+
+#### Let's do the same for deaths!(From lowest to highest this time.)
+
+```{r Team Deaths Per Game, echo= FALSE}
+
+ggplot(team_sums_Spring17, aes(x=teamId, y=team_sum_deaths/gamecount)) + 
+  geom_bar(stat = "identity",aes(fill= teamId))
+```
+
+It turns out that for CLG's high place on the kill ladder they've had to succumb to a lot of deaths. More deaths per game than any other team in fact. Despte beign a lower ranked team DIG actually manages the 3rd least deaths per game. Seeing as how they're also quite low on the kill count might be sign of gameplay that is too passive. 
+
+1) C9          11.65909 ---  (-1.231105295)
+
+2) TSM         11.78723 ---  (-1.158352182)
+
+3) DIG         12.06818 ---  (-0.998844413)
+
+4) P1          12.82927 ---  (-0.566738463)
+
+5) NV          13.80000 ---  (-0.015606678)
+
+6) FLY         13.83721 ---  (0.005518859) 
+
+7) IMT         14.52273 ---  (0.394720880)
+
+8) TL          15.25532 ---  ( 0.810649056)
+
+9) FOX         15.69767 ---  (1.061795740)
+
+10) CLG        16.81818 ---  (1.697962497)
+
+
+
+#### And finally for assists.
+
+```{r Team Assists Per Game, echo= FALSE}
+
+ggplot(team_sums_Spring17, aes(x=teamId, y=team_sum_assists/gamecount)) + 
+  geom_bar(stat = "identity",aes(fill= teamId))
+```
+
+It goes without saying that the teams with the most kills are likely to have the most assists. This ranking is going to be quite similar to the kill ranking. It's important to note there aare some differences and we should think about why these differences occur. I've thought of one interesting to look at the relationship between kills and assists.
+
+1) C9          35.59091 ---  (1.49950190)
+
+2) TSM         34.27660 ---  ( 1.06635252)
+
+3) P1          33.82927 ---  (0.91892983)
+
+4) CLG         32.38636 ---  (0.44340148)
+
+5) DIG         30.86364 ---  (-0.05843348)
+
+6) FLY         30.79070 ---  (-0.08247139)
+
+7) FOX         30.09302 ---  (-0.31239924)
+
+8) IMT         28.47727 ---  (-0.84489124)
+
+9) TL          28.21277 ---  (-0.93206295)
+
+10) NV         25.88889 ---  (-1.69792744)
+
+
+#### For anyone that remembers that Assist per Kill stat let's take look now.
+
+
+
+```{r Team Assists Per Kill, echo= FALSE}
+
+ggplot(team_sums_Spring17, aes(x=teamId, y=team_sum_assists/team_sum_kills)) + 
+  geom_bar(stat = "identity",aes(fill= teamId))
+```
+
+ 
+1) P1          2.379074 ---  (1.24298054)
+
+2) DIG         2.365854 ---  (1.11948474)
+
+3) C9          2.316568 ---  (0.65908223) 
+
+4) TSM         2.301429 ---  (0.51765652)
+
+5) TL          2.278351 ---  (0.30207241)
+
+6) CLG         2.240566 ---  (-0.05089203)
+
+7) FOX         2.234888 ---  (-0.10393599)
+
+8) FLY         2.195688 ---  (-0.47011900)
+
+9) NV          2.076649 ---  (-1.58212774)
+
+10) IMT        2.071074 ---  (-1.63420168)
+ 
+
+This stat let's us observe the degree to which each team centers their kills around team play or solo performances. The teams at the bottom of this rank will trend towards getting kills using as few members as possible. You'll notice that the lower teams have rosters that feature a standout talent in one or two positions and likely play off this mismatch. The teams higher up in this rank are less reliant on solo plays and tend to create action around grouping. It is preferable for teams to be towards the middle indicating a balance between haveing talented individual players as well as using cohseive teamwork in their playstyle.  
+
+
+I'll leave you with that for now. You now have a bit of data to use for your personal power rankings or when you're arguing with your friends about who really is the best team in NA. I hope you can find some enjoyment from this and that I get to do more before playoffs starts. Let me know if there are any stats you'd like me to check out and 'll see if I can work it into the next one.
+
+#### Bonus!!
+
+A small peek at what I'm thinking for next time; A deeper look into the stats by role. Let's use Kills, Deaths and Assists to give us a start
+
+
+### Kills
+```{r Kills per game by Role, echo= FALSE}
+
+ggplot(role_avgs_Spring17, aes(x=role, y=role_mean_kills)) + 
+  geom_bar(stat = "identity",aes(fill= role))
+
+```
+
+### Deaths
+```{r  Deaths per game by Role, echo= FALSE}
+ggplot(role_avgs_Spring17, aes(x=role, y=role_mean_deaths)) + 
+  geom_bar(stat = "identity",aes(fill= role))
+```
+
+
+### Assists
+```{r  Assists per game by Role, echo= FALSE}
+ggplot(role_avgs_Spring17, aes(x=role, y=role_mean_assists)) + 
+  geom_bar(stat = "identity",aes(fill= role))
+```
+
+It's interesting to note that Junglers have actually produced more kills than ADC's this season, a stark difference from past seasons. I guess the memes were right about 2k17. However, for their rise in kill count they are also the role with the most deaths. And Mid Laners are the most selfish role with the least assists and the most kills. 
