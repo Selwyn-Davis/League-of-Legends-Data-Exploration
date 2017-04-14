@@ -1,0 +1,345 @@
+---
+title: "League Of Legends Data Exploration - Gold Edition"
+author: "Selwyn Davis"
+date: "April 3, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(DBI)
+library(RSQLite)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+con<- dbConnect(RSQLite::SQLite(), dbname='lolNA_Spring17.db')
+players_Spring17<- dbGetQuery( con,'select * from Players' )
+players_Spring17<- mutate(players_Spring17, fantasy=
+                          (kills*3)+(assists*2)+(deaths*-1)+(.01*totalMinionsKilled),
+                        goldEarnedpMin= goldEarned/duration,
+                        TDDCpMin= totalDamageDealtToChampions/duration,
+                        TDDEpMin= (totalDamageDealt-totalDamageDealtToChampions)/duration,
+                        TDTpMin= totalDamageTaken/duration,
+                        damageDealt_Efficiency_total= totalDamageDealt/goldSpent,
+                        damageDealt_Efficiency_champion= totalDamageDealtToChampions/goldSpent,
+                        damageTaken_Efficiency= totalDamageTaken/goldSpent,
+                        TDDCpKill= totalDamageDealtToChampions/kills,
+                        TDDCpDeath= totalDamageDealtToChampions/deaths,
+                        TDTpDeath= totalDamageTaken/deaths)
+
+player_avgs_Spring17<- players_Spring17 %>%
+  group_by(name, role, teamId) %>%
+  summarize(Player_mean_goldDif= mean(goldEarnedDif),
+            Player_mean_kills= mean(kills),
+            Player_mean_assists= mean(assists),
+            Player_mean_win= mean(win),
+            Player_mean_largestKillingSpree= mean(largestKillingSpree),
+            Player_mean_champLevelDif= mean(champLevelDif),
+            Player_mean_deaths= mean(deaths),
+            Player_mean_fantasy= mean(fantasy),
+            Player_mean_duration= mean(duration),
+            Player_mean_TDDC= mean(totalDamageDealtToChampions),
+            Player_mean_goldEarnedpMin= mean(goldEarnedpMin),
+            Player_mean_TDDCpMin= mean(TDDCpMin),
+            Player_mean_TDDEpMin=mean(TDDEpMin),
+            Player_mean_damageTaken_Efficiency= mean(damageTaken_Efficiency))
+
+team_avgs_Spring17<- players_Spring17 %>%
+  group_by(teamId) %>%
+  summarize(team_mean_goldDif= mean(goldEarnedDif)*5,
+            team_mean_kills= mean(kills)*5,
+            team_mean_assists= mean(assists)*5,
+            team_mean_win= mean(win),
+            team_mean_largestKillingSpree= mean(largestKillingSpree),
+            team_mean_champLevelDif= mean(champLevelDif)*5,
+            team_mean_deaths= mean(deaths)*5,
+            team_mean_fantasy= mean(fantasy)*5,
+            team_mean_duration= mean(duration),
+            team_mean_TDDC= mean(totalDamageDealtToChampions)*5,
+            team_mean_goldEarnedpMin= mean(goldEarnedpMin)*5,
+            team_mean_TDDCpMin= mean(TDDCpMin)*5,
+            team_mean_TDDEpMin=mean(TDDEpMin)*5)
+
+team_sums_Spring17<- players_Spring17 %>%
+  group_by(teamId) %>%
+  summarize(team_sum_goldDif= sum(goldEarnedDif),
+            team_sum_kills= sum(kills),
+            team_sum_assists= sum(assists),
+            team_sum_win= sum(win)/5,
+            team_sum_largestKillingSpree= sum(largestKillingSpree),
+            team_sum_champLevelDif= sum(champLevelDif),
+            team_sum_deaths= sum(deaths),
+            team_sum_fantasy= sum(fantasy),
+            team_sum_duration= sum(duration),
+            team_sum_TDDC= sum(totalDamageDealtToChampions),
+            team_sum_goldEarnedpMin= sum(goldEarnedpMin),
+            team_sum_TDDCpMin= sum(TDDCpMin),
+            team_sum_TDDEpMin=sum(TDDEpMin),
+            gamecount=n()/5)
+
+role_avgs_Spring17<- players_Spring17 %>%
+  group_by(role) %>%
+  summarize(role_mean_goldDif= mean(goldEarnedDif),
+            role_mean_kills= mean(kills),
+            role_mean_assists= mean(assists),
+            role_mean_win= mean(win),
+            role_mean_largestKillingSpree= mean(largestKillingSpree),
+            role_mean_champLevelDif= mean(champLevelDif),
+            role_mean_deaths= mean(deaths),
+            role_mean_fantasy= mean(fantasy),
+            role_mean_duration= mean(duration),
+            role_mean_TDDC= mean(totalDamageDealtToChampions),
+            role_mean_goldEarnedpMin= mean(goldEarnedpMin),
+            role_mean_TDDCpMin= mean(TDDCpMin),
+            role_mean_TDDEpMin=mean(TDDEpMin),
+            role_mean_damageTaken_Efficiency= mean(damageTaken_Efficiency))
+
+role_win_avgs_Spring17<- players_Spring17 %>%
+  group_by(role, win) %>%
+  summarize(role_win_mean_goldDif= mean(goldEarnedDif),
+            role_win_mean_kills= mean(kills),
+            role_win_mean_assists= mean(assists),
+            role_win_mean_win= mean(win),
+            role_win_mean_largestKillingSpree= mean(largestKillingSpree),
+            role_win_mean_champLevelDif= mean(champLevelDif),
+            role_win_mean_deaths= mean(deaths),
+            role_win_mean_fantasy= mean(fantasy),
+            role_win_mean_duration= mean(duration),
+            role_win_mean_TDDC= mean(totalDamageDealtToChampions),
+            role_win_mean_goldEarnedpMin= mean(goldEarnedpMin),
+            role_win_mean_TDDCpMin= mean(TDDCpMin),
+            role_win_mean_TDDEpMin=mean(TDDEpMin),
+            role_win_mean_damageTaken_Efficiency= mean(damageTaken_Efficiency))
+
+team_role_avgs_Spring17<- players_Spring17 %>%
+  group_by(role, teamId) %>%
+  summarize(Player_mean_goldDif= mean(goldEarnedDif),
+            Player_mean_kills= mean(kills),
+            Player_mean_assists= mean(assists),
+            Player_mean_win= mean(win),
+            Player_mean_largestKillingSpree= mean(largestKillingSpree),
+            Player_mean_champLevelDif= mean(champLevelDif),
+            Player_mean_deaths= mean(deaths),
+            Player_mean_fantasy= mean(fantasy),
+            Player_mean_duration= mean(duration),
+            Player_mean_TDDC= mean(totalDamageDealtToChampions),
+            Player_mean_goldEarnedpMin= mean(goldEarnedpMin),
+            Player_mean_TDDCpMin= mean(TDDCpMin),
+            Player_mean_TDDEpMin=mean(TDDEpMin),
+            Player_mean_damageTaken_Efficiency= mean(damageTaken_Efficiency))
+```
+
+Hi there! Once again my name is Selwyn and I'm here to do a little analysis on data from the NA LCS. Last time I focused around [Kills, Deaths and Assists](https://cdn.rawgit.com/Selwyn-Davis/League-of-Legends-Data-Exploration/b7d93ecb/League_of_Legends_Data_Exploration-KDA.html) and this time I'm going to focus around, as you may have guessed from the title, Gold. We're gonna start with taking a look at mean Gold Earned per Minute(GpM) for each role. 
+
+```{r GpM by Role Bar, echo=FALSE}
+ggplot(role_avgs_Spring17, aes(role, role_mean_goldEarnedpMin), color=role) + 
+  geom_bar(stat = "identity",aes(fill= role)) + xlab("Role")+ ylab("GPM")
+```
+
+
+We can tell immediately that Mid Laners and ADC's are alloted the most gold on their team, followed by Top Laners, Junglers and SUpports in last place. This is to be expected due to the structure of the game so nothing too enlightening here. It'll be more interesting to look at each role's gold allocation in wins compared to losses.
+
+```{r Win/Lose Gold by Role, echo= FALSE}
+ggplot(role_win_avgs_Spring17, aes(win, role_win_mean_goldEarnedpMin))+ geom_bar(stat= "identity", position = "dodge", aes(fill=role))+ facet_wrap(~role)+ geom_text(aes(label= round(role_win_mean_goldEarnedpMin, digits = 2)))
+```
+
+
+As we can see the biggest variation between the average GPM in wins versus losses is in the mid lane. It'll be interesting to look at the some of the individual match ups in this regard. Lo and behold, we actually have a stat at our fingertips that does exactly that. Let's take a look at the mean endgame gold difference between players and their exact match ups. We'll do it by role to since it makes the most sense.
+
+```{r Mean Gold difference by Middle, echo=FALSE}
+ggplot(subset(player_avgs_Spring17, role=="Middle"), aes(name, Player_mean_goldDif))+ geom_bar(stat= "identity", aes(fill=name))+ theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+  ylab("Mean Gold Difference")
+```
+
+The most notable piece of information to take away from this is that Jensen is a monster in the mid lane. The closest mid laner in terms of average gold difference is Bjergsen and Jensen averages about 2.3 times the gold lead that he does. There are only three mid laners that even come up positive in this regard. These players rack up large leads when they're ahead and manage to keep their gold differential small when they're behind. Looking at this stat could also help us pick out power players for each team.
+
+1) Jensen              2053.70455 --- (1.98995141)
+2) Bjergsen            914.44681 --- (1.02922283)
+3) Ryu                 560.17073 --- (0.73046413)
+4) Hai                -41.30233 --- (0.22324585)
+5) Keane              -175.38636 --- (0.11017366)
+6) Froggen            -192.16279 --- (0.09602621)
+7) Pobelter           -337.56818 --- (-0.02659321)
+8) Huhi               -424.47727 --- (-0.09988307)
+9) Ninja              -520.34146 --- (-0.18072472)
+10) Piglet            -1442.80952 --- (-0.95863599)
+11) Goldenglue        -1687.42308 --- (-1.16491699)
+12) AlexIch           -2379.25000 --- (-1.74833010) 
+
+
+```{r Mean Gold difference by Top, echo=FALSE}
+ggplot(subset(player_avgs_Spring17, role=="Top"), aes(name, Player_mean_goldDif))+ geom_bar(stat= "identity", aes(fill=name))+ theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+  ylab("Mean Gold Difference")
+```
+
+With a lot less variation and more players coming up positive in gold difference Top lane is more tightly distributed. However we can see that Hauntzer stands above the competition quite convincingly. Ssumday is known to be the beneficiary of top centric gameplay throughout the season and we can see that it has pushed him into the 3rd spot despite a losing team record. I would be worried about the match  up between Hauntzer and Balls during the quarterfinals because if previous performance is any indicator we have quite the opportunity for some explosive action.
+
+1) Hauntzer            1605.8085 --- (1.69361073)
+2) Ray                 1113.8000 --- (1.14602582)
+3) Ssumday             915.4091 --- (0.92522503)
+4) Impact              909.6471 --- (0.91881213)
+5) Flame               129.2500 --- (0.05026283)
+6) Seraph             -428.5556 --- (-0.57055144)
+7) Lourlo             -451.1277 --- (-0.59567325)
+8) Zig                -466.9024 --- (-0.61322992)
+9)  Darshan           -571.7273 --- (-0.72989557)
+10) Balls             -770.4651 --- (-0.95108249)
+11) Looper            -1060.1628 --- (-1.27350389)
+
+```{r Mean Gold difference by Jungle, echo=FALSE}
+ggplot(subset(player_avgs_Spring17, role=="Jungle"), aes(name, Player_mean_goldDif))+ geom_bar(stat= "identity", aes(fill=name))+ theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+  ylab("Mean Gold Difference")
+```
+
+And in the jungle role We have Dark Meteos reigning supreme. Important to note that similiar to many of the other outliers on these lists Meteos has fewer games than most. Unlike the other substitutes that have played this split Meteos finds himself on the top, outperforming resident LCS junglers during his short stint. Another interesting fact is that in the jungle role is where TSM finds their weakest performer in gold advantage. Most of the highest ranking players in this statistc are from teams from the highest win rate. Obvious to say the least, but deviations are important to notice. Lira for instance is on the team with the lowest winrate, but manages to average golds leads over enemy junglers.
+
+1) Meteos              1037.421053 --- (1.79915321)
+2) Contractz           389.022727 --- (0.70836906)
+3) Lira                366.804878 --- (0.67099253)
+4) Inori               307.000000 --- (0.5703842)
+5) Svenskeren          230.914894 --- (0.44238824)
+6) Dardoch             189.181818 --- (0.37218174)
+7) Moon               -3.581395 --- (0.04790104)
+8) Akaadian           -237.465116 --- (-0.34555564)
+9) Chaser             -359.568182 --- (-0.55096655)
+10) Reignover         -452.872340 --- (-0.70792978)
+11) Xmithie           -573.022727 --- (-0.91005575)
+12) Ninja             -1278.500000 --- (-2.09686237)
+
+```{r Mean Gold difference by ADC, echo=FALSE}
+ggplot(subset(player_avgs_Spring17, role=="ADC"), aes(name, Player_mean_goldDif))+ geom_bar(stat= "identity", aes(fill=name))+ theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+  ylab("Mean Gold Difference")
+```
+
+In the ADC role the top half of the rankings are much tighter. Sneaky does make his presence felt at the top, but he's not so far away from his peers as Jensen or Hauntzer is. We do learn that Aphromoo is gonna need a bit more practice before he can challenge Stixxay for the ADC position on CLG. CodySun has performed quite well in his role despite his team's difficulties. Deserving of a pat on the back at the very least. 
+
+1) Sneaky               828.0000 --- (0.91208018)
+2) Wildturtle           708.1702 --- (0.83265982)
+3) Arrow                638.5366 --- (0.78650829)
+4) Codysun              526.9773 --- (0.71256940)
+5) Stixxay              283.6190 --- (0.5512773)
+6) Altec                263.9767 --- (0.53825884)
+7) Apollo              -258.4889 --- (0.19198091)
+8) Piglet              -580.6154 --- (-0.02151695)
+9) LOD                 -621.8409 --- (-0.04884025)
+10) Doublelift         -775.4000 --- (-0.15061561)
+11) Keith              -1244.5581 --- (-0.46156258)
+12) Youngbin           -2330.3333 --- (-1.18118882)
+13) Aphromoo           -4564.0000 --- (-2.66161052)
+
+```{r Mean Gold difference by Support, echo=FALSE}
+ggplot(subset(player_avgs_Spring17, role=="Support"), aes(name, Player_mean_goldDif))+ geom_bar(stat= "identity", aes(fill=name))+ theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+  ylab("Mean Gold Difference")
+```
+
+And the position with the least variance, Support! We're going to see the rankings following team win rates. Most of the variation is going to be the cause of objectives and assists. Any support that is able to pick up a few kills for themselves are likely to soar higher, but that doesn't particularly make for a better team. I would think that any support that is able to reduce their gold share in favor of getting more gold to a mid laner or ADC.
+
+1) Stunt               987.5000 --- (1.08711987) 
+2) Biofrost            654.8936 --- (0.81651262)
+3) Smoothie            559.9773 --- (0.73928906)
+4) Olleh               491.6136 --- (0.68366867)
+5) Adrian              415.3750 --- (0.62164122)
+6) LemonNation         213.2093 --- (0.45716000) 
+7) Gate               -262.4884 --- (0.07013425)
+8) Aphromoo           -308.4286 --- (0.03275748)
+9) Hakuho             -311.0222 --- (0.03064730)
+10) Xpecial           -583.6829 --- (-0.19118838)
+11) Matt              -814.9318 --- (-0.37933156)
+12) Shady             -2185.0000 --- (-1.49401364)
+13) Joey              -3390.0000 --- (-2.47439689)
+
+***
+###As a Bonus(Because I love bonuses even when you don't ask) I thought it might be interesting to take a look at the gold percentages of each team and see if we can find a difference.,
+```{r GpM by Role/Win Pie, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="TSM")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "TSM")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "TSM Average Gold Earned as %")
+```
+
+```{r GpM by Role TL, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="TL ")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "TL ")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "TL Average Gold Earned as %")
+```
+
+
+```{r GpM by Role C9, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="C9 ")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "C9 ")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "C9 Average Gold Earned as %")
+```
+
+
+```{r GpM by Role FOX, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="FOX")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "FOX")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "FOX Average Gold Earned as %")
+```
+
+
+```{r GpM by Role CLG, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="CLG")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "CLG")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "CLG Average Gold Earned as %")
+```
+
+```{r GpM by Role DIG, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="DIG")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "DIG")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "DIG Average Gold Earned as %")
+```
+
+```{r GpM by Role NV, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="NV ")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "NV ")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "NV Average Gold Earned as %")
+```
+
+```{r GpM by Role P1, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="P1 ")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "P1 ")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "P1 Average Gold Earned as %")
+```
+
+```{r GpM by Role IMT, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="IMT")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "IMT")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "IMT Average Gold Earned as %")
+```
+
+```{r GpM by Role FLY, echo=FALSE}
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="FLY")["Player_mean_goldEarnedpMin"]))
+pct <- round(GpM/sum(GpM)*100, digits = 3)
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "FLY")["role"])
+lbls <- paste(lbls, pct)  
+lbls <- paste(lbls,"%",sep="")
+pie(as.integer(GpM), lbls, main = "FLY Average Gold Earned as %")
+```
