@@ -250,20 +250,22 @@ And the position with the least variance, Support! We're going to see the rankin
 13) Joey              -3390.0000 --- (-2.47439689)
 
 ***
-###As a Bonus(Because I love bonuses even when you don't ask) I thought it might be interesting to take a look at the gold percentages of each team and see if we can find a difference.,
+###As a Bonus(Because I love bonuses even when you don't ask) I thought it might be interesting to take a look at the gold percentages of each team and see if we can find a difference. 
+
+(Just a note I thought it was best to remove support from this visual because it won't likely tell you much abouts the manner in which a team's resources are distributed since there isn't a strategy that takes into account support's gold share in order to win.)
 ```{r GpM by Role/Win Pie, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="TSM")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="TSM"& role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "TSM")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "TSM"& role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "TSM Average Gold Earned as %")
 ```
 
 ```{r GpM by Role TL, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="TL ")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="TL "& role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "TL ")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "TL "& role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "TL Average Gold Earned as %")
@@ -271,9 +273,9 @@ pie(as.integer(GpM), lbls, main = "TL Average Gold Earned as %")
 
 
 ```{r GpM by Role C9, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="C9 ")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="C9 "& role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "C9 ")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "C9 "& role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "C9 Average Gold Earned as %")
@@ -281,9 +283,9 @@ pie(as.integer(GpM), lbls, main = "C9 Average Gold Earned as %")
 
 
 ```{r GpM by Role FOX, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="FOX")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="FOX"& role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "FOX")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "FOX"& role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "FOX Average Gold Earned as %")
@@ -291,54 +293,54 @@ pie(as.integer(GpM), lbls, main = "FOX Average Gold Earned as %")
 
 
 ```{r GpM by Role CLG, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="CLG")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="CLG"& role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "CLG")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "CLG"& role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "CLG Average Gold Earned as %")
 ```
 
 ```{r GpM by Role DIG, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="DIG")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="DIG"& role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "DIG")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "DIG"& role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "DIG Average Gold Earned as %")
 ```
 
 ```{r GpM by Role NV, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="NV ")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="NV "& role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "NV ")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "NV "& role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "NV Average Gold Earned as %")
 ```
 
 ```{r GpM by Role P1, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="P1 ")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="P1 "& role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "P1 ")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "P1 "& role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "P1 Average Gold Earned as %")
 ```
 
 ```{r GpM by Role IMT, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="IMT")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="IMT"& role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "IMT")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "IMT"& role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "IMT Average Gold Earned as %")
 ```
 
 ```{r GpM by Role FLY, echo=FALSE}
-GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="FLY")["Player_mean_goldEarnedpMin"]))
+GpM<- as.numeric(unlist(subset(team_role_avgs_Spring17, teamId=="FLY" & role!="Support")["Player_mean_goldEarnedpMin"]))
 pct <- round(GpM/sum(GpM)*100, digits = 3)
-lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "FLY")["role"])
+lbls<- unlist(subset(team_role_avgs_Spring17, teamId== "FLY" & role!="Support")["role"])
 lbls <- paste(lbls, pct)  
 lbls <- paste(lbls,"%",sep="")
 pie(as.integer(GpM), lbls, main = "FLY Average Gold Earned as %")
